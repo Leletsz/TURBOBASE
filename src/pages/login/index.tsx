@@ -55,8 +55,14 @@ export function Login() {
               register={register}
             ></Input>
           </div>
-          <button className="cursor-pointer">Acessar</button>
+          <button
+            type="submit"
+            className="cursor-pointer bg-zinc-900 w-full rounded-md text-white h-10 font-medium"
+          >
+            Acessar
+          </button>
         </form>
+        <Link to={"/register"}>Ainda não possui uma conta? Clique aqui </Link>
       </div>
     </Container>
   );
