@@ -1,3 +1,6 @@
+import { supabase } from "../../services/supabaseClient";
+import { useNavigate } from "react-router-dom";
+
 import { Link } from "react-router-dom";
 import { Container } from "../../components/container";
 import logoImg from "../../assets/logo.png";
@@ -25,8 +28,22 @@ export function Login() {
     mode: "onChange",
   });
 
-  function onSubmit(data: FormData) {
-    console.log(data);
+  const navigate = useNavigate();
+
+  async function onSubmit(data: FormData) {
+    const { email, password } = data;
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    navigate("/dashboard"); // ou a rota que você quiser
   }
   return (
     <Container>
