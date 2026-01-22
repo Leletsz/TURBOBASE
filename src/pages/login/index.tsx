@@ -9,6 +9,7 @@ import { Input } from "../../components/input/index";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect, useState } from "react";
 
 const schema = z.object({
   email: z
@@ -27,6 +28,14 @@ export function Login() {
     resolver: zodResolver(schema),
     mode: "onChange",
   });
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    async function handleLogout() {
+      await supabase.auth.signOut();
+    }
+    handleLogout();
+  }, []);
 
   const navigate = useNavigate();
 
@@ -39,7 +48,7 @@ export function Login() {
     });
 
     if (error) {
-      alert(error.message);
+      setError(true);
       return;
     }
 
@@ -72,6 +81,11 @@ export function Login() {
               register={register}
             ></Input>
           </div>
+          {error && (
+            <p className="text-red-500 mb-2 ml-1">
+              Email ou senha estão incorretos!
+            </p>
+          )}
           <button
             type="submit"
             className="cursor-pointer bg-zinc-900 w-full rounded-md text-white h-10 font-medium"
@@ -79,7 +93,9 @@ export function Login() {
             Acessar
           </button>
         </form>
-        <Link to={"/register"}>Ainda não possui uma conta? Clique aqui </Link>
+        <Link to={"/register"}>
+          Ainda não possui uma conta? <strong>Clique aqui</strong>{" "}
+        </Link>
       </div>
     </Container>
   );
