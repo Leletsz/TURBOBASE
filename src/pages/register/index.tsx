@@ -7,6 +7,8 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signUp } from "../../services/auth";
+import { useEffect } from "react";
+import { supabase } from "../../services/supabaseClient";
 
 const schema = z.object({
   name: z.string().min(1, "O campo nome é obrigatório"),
@@ -17,6 +19,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export function Register() {
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
@@ -26,8 +29,12 @@ export function Register() {
     mode: "onChange",
   });
 
-  const navigate = useNavigate();
-
+  useEffect(() => {
+    async function handleLogout() {
+      await supabase.auth.signOut();
+    }
+    handleLogout();
+  }, []);
   async function onSubmit(data: FormData) {
     try {
       await signUp({

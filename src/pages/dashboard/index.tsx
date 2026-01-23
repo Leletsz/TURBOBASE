@@ -1,3 +1,9 @@
+import { Container } from "../../components/container";
+
 export function Dashboard() {
-  return <div>Dashboard</div>;
+  return (
+    <Container>
+      <h1>Pagina Dashboard</h1>
+    </Container>
+  );
 }
