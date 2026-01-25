@@ -1,9 +1,11 @@
+import { FiUpload } from "react-icons/fi";
 import { Container } from "../../components/container";
+import { DashboardHeader } from "../../components/panelheader";
 
 export function Dashboard() {
   return (
     <Container>
-      <h1>Pagina Dashboard</h1>
+      <DashboardHeader />
     </Container>
   );
 }
