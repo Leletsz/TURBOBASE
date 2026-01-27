@@ -1,13 +1,14 @@
-import { FiUpload } from "react-icons/fi";
+import { FiTrash, FiUpload } from "react-icons/fi";
 import { Container } from "../../../components/container";
 import { DashboardHeader } from "../../../components/panelheader";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "../../../components/input";
-import { useContext, type ChangeEvent } from "react";
+import { useContext, useState, type ChangeEvent } from "react";
 import { AuthContext } from "../../../contexts/AuthContext";
 import { v4 as uuidv4 } from "uuid";
+import { supabase } from "../../../services/supabaseClient";
 
 const schema = z.object({
   name: z.string().nonempty("O campo nome é obrigatório"),
@@ -26,6 +27,13 @@ const schema = z.object({
 });
 type FormData = z.infer<typeof schema>;
 
+interface ImageItemProps {
+  uid: string;
+  name: string;
+  previewUrl: string;
+  url: string;
+}
+
 export function New() {
   const { user } = useContext(AuthContext);
   const {
@@ -38,28 +46,67 @@ export function New() {
     mode: "onChange",
   });
 
-  function handleFile(e: ChangeEvent<HTMLInputElement>) {
-    if (e.target.files && e.target.files[0]) {
-      const image = e.target.files[0];
-      if (image.type === "image/jpeg" || image.type === "image/png") {
-      } else {
-        alert("Envie uma imagem com formato correto (.Png ou .Jpeg)");
-      }
-    }
-  }
+  const [carImages, setCarImages] = useState<ImageItemProps[]>([]);
 
-  async function handleUpload(image: File) {
-    if (!user?.uid) {
+  const carId = uuidv4();
+
+  function handleFile(e: ChangeEvent<HTMLInputElement>) {
+    if (!e.target.files || !e.target.files[0]) return;
+
+    const image = e.target.files[0];
+
+    if (image.type !== "image/jpeg" && image.type !== "image/png") {
+      alert("Envie uma imagem PNG ou JPEG");
       return;
     }
-    const currentUid = user?.uid;
 
-    const uidImage = uuidv4();
+    handleUpload(image, carId);
+  }
+
+  async function handleUpload(file: File, carId: string) {
+    const fileExt = file.name.split(".").pop(); // ✅ extensão correta
+    const fileName = uuidv4();
+
+    const filePath = `cars/${carId}/${fileName}.${fileExt}`;
+
+    const { error } = await supabase.storage
+      .from("car-images")
+      .upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: false,
+        contentType: file.type,
+      });
+
+    if (error) throw error;
+
+    const imageItem: ImageItemProps = {
+      name: `${fileName}.${fileExt}`,
+      uid: carId, //
+      previewUrl: URL.createObjectURL(file),
+      url: filePath,
+    };
+
+    setCarImages((prev) => [...prev, imageItem]);
   }
 
   function onSubmit(data: FormData) {
     console.log(data);
   }
+  async function handleDeleteImage(item: ImageItemProps) {
+    const { error } = await supabase.storage
+      .from("car-images")
+      .remove([item.url]);
+
+    if (error) {
+      console.error("Erro ao deletar imagem:", error.message);
+      return;
+    }
+
+    setCarImages((prev) => prev.filter((img) => img.url !== item.url));
+
+    console.log("Imagem removida do storage com sucesso");
+  }
+
   return (
     <Container>
       <DashboardHeader />
@@ -77,6 +124,23 @@ export function New() {
             />
           </div>
         </button>
+        {carImages.map((item) => (
+          <div
+            key={item.name}
+            className="h-32 flex items-center justify-center relative"
+          >
+            <button
+              className="absolute cursor-pointer"
+              onClick={() => handleDeleteImage(item)}
+            >
+              <FiTrash size={28} color="#fff" />
+            </button>
+            <img
+              src={item.previewUrl}
+              className="rounded-lg w-full h-32 object-cover"
+            />
+          </div>
+        ))}
       </div>
       <div className="w-full bg-white p-3 rounded-lg flex flex-col sm:flex-row items-center gap-2 mt-2">
         <form className="w-full" onSubmit={handleSubmit(onSubmit)}>
