@@ -1,4 +1,3 @@
-import { FiUpload } from "react-icons/fi";
 import { Container } from "../../components/container";
 import { DashboardHeader } from "../../components/panelheader";
 

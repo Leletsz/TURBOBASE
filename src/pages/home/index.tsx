@@ -1,6 +1,56 @@
+import { useEffect, useState } from "react";
 import { Container } from "../../components/container";
-
+import { supabase } from "../../services/supabaseClient";
+import { Link } from "react-router-dom";
+interface CarsProps {
+  id: string;
+  name: string;
+  year: string;
+  uid: string;
+  price: string | number;
+  city: string;
+  km: string;
+  car_images: {
+    path: string;
+    is_cover: boolean;
+  }[];
+}
 export function Home() {
+  const [cars, setCars] = useState<CarsProps[]>([]);
+  useEffect(() => {
+    async function loadCars() {
+      const { data, error } = await supabase
+        .from("cars")
+        .select(
+          `
+          id,
+          name,
+          year,
+          price,
+          city,
+          km,
+          car_images (
+            path,
+            is_cover
+          )
+        `,
+        )
+        .order("created_at", { ascending: false });
+      if (error) {
+        console.log(error);
+        return;
+      }
+      setCars(data as CarsProps[]);
+    }
+    loadCars();
+  }, []);
+
+  function getCoverImage(images: CarsProps["car_images"]) {
+    if (!images || images.length === 0) return null;
+
+    return images.find((img) => img.is_cover)?.path ?? images[0].path;
+  }
+
   return (
     <Container>
       <section className="bg-white p-4 rounded-lg w-full max-w-3xl mx-auto flex justify-center items-center gap-2">
@@ -18,68 +68,33 @@ export function Home() {
       </h1>
 
       <main className="w-full grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <section className="w-full bg-white rounded-lg">
-          <img
-            className="w-full rounded-lg mb-2 max-h-72 hover:scale-105 transition-all
+        {cars.map((car) => (
+          <Link key={car.id} to={`/car/${car.id}`}>
+            <section className="w-full bg-white rounded-lg">
+              <img
+                className="w-full rounded-lg mb-2 max-h-72 hover:scale-105 transition-all
             "
-            src="https://www.webmotors.com.br/wp-content/uploads/2025/12/05163804/Novo-Honda-WR-V-2026-11.webp"
-            alt=""
-          />
-          <p className="font-bold mt-1 mb-2 px-2">Honda WR-V</p>
+                src={`https://xsvwlncjmgejdaoprqhx.supabase.co/storage/v1/object/public/car-images/${getCoverImage(car.car_images)}`}
+                alt={car.name}
+              />
+              <p className="font-bold mt-1 mb-2 px-2">{car.name}</p>
 
-          <div className="flex flex-col px-2">
-            <span className="text-zinc-700 mb-6">Ano 2026 - 0 km</span>
-            <strong className="text-black font-medium text-xl">
-              R$ 350.000
-            </strong>
-          </div>
+              <div className="flex flex-col px-2">
+                <span className="text-zinc-700 mb-6">
+                  Ano {car.year} - {car.km} KM
+                </span>
+                <strong className="text-black font-medium text-xl">
+                  {car.price}
+                </strong>
+              </div>
 
-          <div className="w-full h-px bg-slate-200 my-2"></div>
-          <div className="px-2 pb-2">
-            <span className="text-black">São Paulo - SP</span>
-          </div>
-        </section>
-        <section className="w-full bg-white rounded-lg">
-          <img
-            className="w-full rounded-lg mb-2 max-h-72 hover:scale-105 transition-all
-            "
-            src="https://www.webmotors.com.br/wp-content/uploads/2025/12/05163804/Novo-Honda-WR-V-2026-11.webp"
-            alt=""
-          />
-          <p className="font-bold mt-1 mb-2 px-2">Honda WR-V</p>
-
-          <div className="flex flex-col px-2">
-            <span className="text-zinc-700 mb-6">Ano 2026 - 0 km</span>
-            <strong className="text-black font-medium text-xl">
-              R$ 350.000
-            </strong>
-          </div>
-
-          <div className="w-full h-px bg-slate-200 my-2"></div>
-          <div className="px-2 pb-2">
-            <span className="text-black">São Paulo - SP</span>
-          </div>
-        </section>
-        <section className="w-full bg-white rounded-lg">
-          <img
-            className="w-full rounded-lg mb-2 max-h-72 hover:scale-105 transition-all
-            "
-            src="https://www.webmotors.com.br/wp-content/uploads/2025/12/05163804/Novo-Honda-WR-V-2026-11.webp"
-            alt=""
-          />
-          <p className="font-bold mt-1 mb-2 px-2">Honda WR-V</p>
-          <div className="flex flex-col px-2">
-            <span className="text-zinc-700 mb-6">Ano 2026 - 0 km</span>
-            <strong className="text-black font-medium text-xl">
-              R$ 350.000
-            </strong>
-          </div>
-          R$
-          <div className="w-full h-px bg-slate-200 my-2"></div>
-          <div className="px-2 pb-2">
-            <span className="text-black">São Paulo - SP</span>
-          </div>
-        </section>
+              <div className="w-full h-px bg-slate-200 my-2"></div>
+              <div className="px-2 pb-2">
+                <span className="text-black">{car.city}</span>
+              </div>
+            </section>
+          </Link>
+        ))}
       </main>
     </Container>
   );

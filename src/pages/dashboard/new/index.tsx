@@ -9,7 +9,7 @@ import { useContext, useState, type ChangeEvent } from "react";
 import { AuthContext } from "../../../contexts/AuthContext";
 import { v4 as uuidv4 } from "uuid";
 import { supabase } from "../../../services/supabaseClient";
-
+import { createCar, saveCarImages } from "../../../services/cars";
 const schema = z.object({
   name: z.string().nonempty("O campo nome é obrigatório"),
   model: z.string().nonempty("O modelo é obrigatório"),
@@ -28,7 +28,6 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 interface ImageItemProps {
-  uid: string;
   name: string;
   previewUrl: string;
   url: string;
@@ -48,8 +47,6 @@ export function New() {
 
   const [carImages, setCarImages] = useState<ImageItemProps[]>([]);
 
-  const carId = uuidv4();
-
   function handleFile(e: ChangeEvent<HTMLInputElement>) {
     if (!e.target.files || !e.target.files[0]) return;
 
@@ -60,14 +57,14 @@ export function New() {
       return;
     }
 
-    handleUpload(image, carId);
+    handleUpload(image);
   }
 
-  async function handleUpload(file: File, carId: string) {
-    const fileExt = file.name.split(".").pop(); // ✅ extensão correta
+  async function handleUpload(file: File) {
+    const fileExt = file.name.split(".").pop();
     const fileName = uuidv4();
 
-    const filePath = `cars/${carId}/${fileName}.${fileExt}`;
+    const filePath = `cars/${fileName}.${fileExt}`;
 
     const { error } = await supabase.storage
       .from("car-images")
@@ -81,7 +78,7 @@ export function New() {
 
     const imageItem: ImageItemProps = {
       name: `${fileName}.${fileExt}`,
-      uid: carId, //
+      //
       previewUrl: URL.createObjectURL(file),
       url: filePath,
     };
@@ -89,9 +86,37 @@ export function New() {
     setCarImages((prev) => [...prev, imageItem]);
   }
 
-  function onSubmit(data: FormData) {
-    console.log(data);
+  async function onSubmit(data: FormData) {
+    if (carImages.length === 0) {
+      alert("Envie alguma imagem deste carro");
+      return;
+    }
+
+    if (!user) return;
+
+    try {
+      const carId = await createCar({
+        user_id: user.uid,
+        name: data.name,
+        model: data.model,
+        year: data.year,
+        km: data.km,
+        price: data.price,
+        city: data.city,
+        whatsapp: data.whatsapp,
+        description: data.description,
+      });
+
+      await saveCarImages(carId, carImages);
+
+      alert("Carro cadastrado com sucesso!");
+      reset();
+      setCarImages([]);
+    } catch (error: any) {
+      alert(error.message);
+    }
   }
+
   async function handleDeleteImage(item: ImageItemProps) {
     const { error } = await supabase.storage
       .from("car-images")
