@@ -10,6 +10,7 @@ interface CarsProps {
   price: string | number;
   city: string;
   km: string;
+  user_id: string;
   car_images: {
     path: string;
     is_cover: boolean;
@@ -17,6 +18,7 @@ interface CarsProps {
 }
 export function Home() {
   const [cars, setCars] = useState<CarsProps[]>([]);
+  const [loadImages, setLoadImages] = useState<string[]>([]);
   useEffect(() => {
     async function loadCars() {
       const { data, error } = await supabase
@@ -29,6 +31,7 @@ export function Home() {
           price,
           city,
           km,
+          user_id,
           car_images (
             path,
             is_cover
@@ -44,6 +47,10 @@ export function Home() {
     }
     loadCars();
   }, []);
+
+  function handleImageLoad(id: string) {
+    setLoadImages((prevImageLoaded) => [...prevImageLoaded, id]);
+  }
 
   function getCoverImage(images: CarsProps["car_images"]) {
     if (!images || images.length === 0) return null;
@@ -69,13 +76,20 @@ export function Home() {
 
       <main className="w-full grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {cars.map((car) => (
-          <Link key={car.id} to={`/car/${car.id}`}>
+          <Link key={car.id} to={`/car/${car.user_id}`}>
             <section className="w-full bg-white rounded-lg">
+              <div
+                className="w-full h-72 rounded-lg bg-slate-200"
+                style={{
+                  display: loadImages.includes(car.id) ? "none" : "block",
+                }}
+              ></div>
               <img
                 className="w-full rounded-lg mb-2 max-h-72 hover:scale-105 transition-all
             "
                 src={`https://xsvwlncjmgejdaoprqhx.supabase.co/storage/v1/object/public/car-images/${getCoverImage(car.car_images)}`}
                 alt={car.name}
+                onLoad={() => handleImageLoad(car.id)}
               />
               <p className="font-bold mt-1 mb-2 px-2">{car.name}</p>
 
