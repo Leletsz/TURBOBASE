@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Container } from "../../components/container";
 import { supabase } from "../../services/supabaseClient";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 interface CarsProps {
   id: string;
   name: string;
@@ -19,6 +19,7 @@ interface CarsProps {
 export function Home() {
   const [cars, setCars] = useState<CarsProps[]>([]);
   const [loadImages, setLoadImages] = useState<string[]>([]);
+
   useEffect(() => {
     async function loadCars() {
       const { data, error } = await supabase
@@ -76,7 +77,7 @@ export function Home() {
 
       <main className="w-full grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {cars.map((car) => (
-          <Link key={car.id} to={`/car/${car.user_id}`}>
+          <Link key={car.id} to={`/car/${car.id}`}>
             <section className="w-full bg-white rounded-lg">
               <div
                 className="w-full h-72 rounded-lg bg-slate-200"
